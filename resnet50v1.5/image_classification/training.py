@@ -314,7 +314,7 @@ def train(train_loader,
         lr_scheduler(optimizer, i, epoch)
         data_time = time.time() - end
 
-        optimizer_step = ((i + 1) % batch_size_multiplier) == 0
+        optimizer_step = ((i + 1) % (batch_size_multiplier)) == 0
         loss = step(input, target, optimizer_step=optimizer_step)
 
         it_time = time.time() - end

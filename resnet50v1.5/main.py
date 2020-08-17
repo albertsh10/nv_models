@@ -46,6 +46,9 @@ import torch.utils.data.distributed
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 
+# TODO (SS support)
+from apex.contrib.sparsity import ASP
+
 try:
     from apex.parallel import DistributedDataParallel as DDP
     from apex.fp16_utils import *
@@ -195,6 +198,9 @@ def add_parser_arguments(parser):
     parser.add_argument('--fp16',
                         action='store_true',
                         help='Run model fp16 mode.')
+    parser.add_argument('--sparse',
+                        action='store_true',
+                        help='prune for sparse.')
     parser.add_argument(
         '--static-loss-scale',
         type=float,
@@ -309,6 +315,7 @@ def main(args):
             print(
                 "Warning: simulated batch size {} is not divisible by actual batch size {}"
                 .format(args.optimizer_batch_size, tbs))
+        print("BSM: ws{} : bs{}, tbs{}".format(args.world_size, args.batch_size , tbs))
         batch_size_multiplier = int(args.optimizer_batch_size / tbs)
         print("BSM: {}".format(batch_size_multiplier))
 
@@ -439,6 +446,12 @@ def main(args):
         model_and_loss.distributed()
 
     model_and_loss.load_model_state(model_state)
+
+    if args.sparse and args.resume:
+        # TODO(albert) add ASP support
+        ASP.prune_trained_model(model_and_loss.model, optimizer)
+
+    print(args.save_checkpoints)
 
     train_loop(model_and_loss,
                optimizer,
