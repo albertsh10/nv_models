@@ -37,6 +37,9 @@ from . import logger as log
 from . import resnet as models
 from . import utils
 import dllogger
+# TODO add logging imports
+from torch.utils.tensorboard import SummaryWriter
+
 try:
     from apex.parallel import DistributedDataParallel as DDP
     from apex.fp16_utils import *
@@ -473,6 +476,11 @@ def train_loop(model_and_loss,
                checkpoint_dir='./'):
 
     prec1 = -1
+
+    # TODO(albert) add summary writer
+    writer = SummaryWriter()
+    print(writer)
+
 
     epoch_iter = range(start_epoch, epochs)
     for epoch in epoch_iter:

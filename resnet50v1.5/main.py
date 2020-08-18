@@ -48,6 +48,7 @@ import torchvision.datasets as datasets
 
 # TODO (SS support)
 from apex.contrib.sparsity import ASP
+from torch.utils.tensorboard import SummaryWriter
 
 try:
     from apex.parallel import DistributedDataParallel as DDP
