@@ -49,6 +49,13 @@ except ImportError:
         "Please install apex from https://www.github.com/nvidia/apex to run this example."
     )
 
+try:
+    # TODO(albert) add summary writer
+    writer = SummaryWriter()
+except ValueError:
+    raise ValueError("cannot find writer")
+
+
 ACC_METADATA = {'unit': '%','format': ':.2f'}
 IPS_METADATA = {'unit': 'img/s', 'format': ':.2f'}
 TIME_METADATA = {'unit': 's', 'format': ':.5f'}
@@ -304,6 +311,11 @@ def train(train_loader,
     model_and_loss.train()
     end = time.time()
 
+    params = model_and_loss.model.named_parameters()
+    for name, param in params:
+        print(name, param)
+        assert(0)
+
     optimizer.zero_grad()
 
     data_iter = enumerate(train_loader)
@@ -329,6 +341,7 @@ def train(train_loader,
             logger.log_metric('train.total_ips', calc_ips(bs, it_time))
             logger.log_metric('train.data_time', data_time)
             logger.log_metric('train.compute_time', it_time - data_time)
+            writer.add_scalar('Loss/train', loss, i)
 
         end = time.time()
 
@@ -410,6 +423,8 @@ def validate(val_loader,
     step = get_val_step(model_and_loss)
 
     top1 = log.AverageMeter()
+    top5 = log.AverageMeter()
+    losses = log.AverageMeter()
     # switch to evaluate mode
     model_and_loss.eval()
 
@@ -430,6 +445,9 @@ def validate(val_loader,
         it_time = time.time() - end
 
         top1.record(to_python_float(prec1), bs)
+        top5.record(to_python_float(prec5), bs)
+        losses.record(to_python_float(loss), bs)
+        
         if logger is not None:
             logger.log_metric('val.top1', to_python_float(prec1), bs)
             logger.log_metric('val.top5', to_python_float(prec5), bs)
@@ -444,6 +462,9 @@ def validate(val_loader,
             logger.log_metric('val.compute_latency_at100', it_time - data_time)
 
         end = time.time()
+    writer.add_scalar('top1', top1.get_val(), epoch)
+    writer.add_scalar('top5', top5.get_val(), epoch)
+    writer.add_scalar('Loss/test', losses.get_val(), epoch)
 
     return top1.get_val()
 
@@ -476,10 +497,6 @@ def train_loop(model_and_loss,
                checkpoint_dir='./'):
 
     prec1 = -1
-
-    # TODO(albert) add summary writer
-    writer = SummaryWriter()
-    print(writer)
 
 
     epoch_iter = range(start_epoch, epochs)
