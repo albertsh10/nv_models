@@ -312,9 +312,9 @@ def train(train_loader,
     end = time.time()
 
     params = model_and_loss.model.named_parameters()
-    for name, param in params:
-        print(name, param)
-        assert(0)
+    # for name, param in params:
+    #     print(name, param)
+    #     assert(0)
 
     optimizer.zero_grad()
 

@@ -301,6 +301,7 @@ class PrefetchedWrapper(object):
 
 def get_pytorch_train_loader(data_path, batch_size, num_classes, one_hot, workers=5, _worker_init_fn=None, fp16=False):
     traindir = os.path.join(data_path, 'train')
+    print(traindir)
     train_dataset = datasets.ImageFolder(
             traindir,
             transforms.Compose([
@@ -316,6 +317,7 @@ def get_pytorch_train_loader(data_path, batch_size, num_classes, one_hot, worker
     train_loader = torch.utils.data.DataLoader(
             train_dataset, batch_size=batch_size, shuffle=(train_sampler is None),
             num_workers=workers, worker_init_fn=_worker_init_fn, pin_memory=True, sampler=train_sampler, collate_fn=fast_collate, drop_last=True)
+    print(train_loader)
 
     return PrefetchedWrapper(train_loader, num_classes, fp16, one_hot), len(train_loader)
 
