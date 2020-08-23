@@ -51,7 +51,8 @@ except ImportError:
 
 try:
     # TODO(albert) add summary writer
-    writer = SummaryWriter()
+    print('pid = ', os.getpid())
+    writer = SummaryWriter('./runs/'+str(os.getpid()))
 except ValueError:
     raise ValueError("cannot find writer")
 
