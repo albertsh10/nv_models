@@ -366,26 +366,37 @@ def train(train_loader,
             return _tensor_sparsity
 
         l2_list = []
+        l1_list = []
         for name, param in params:
             new_name = name[2:].replace('.', '/')
-            # l2_loss = torch.norm(param)
-            # writer.add_scalar('L2/'+new_name, l2_loss, i)
+            l2_loss = torch.norm(param)
+            l1_loss = torch.norm(param, 1)
+
+            writer.add_scalar('L2/'+new_name, l2_loss, i + epoch * step_per_epoch)
+            writer.add_scalar('L1/'+new_name, l1_loss, i + epoch * step_per_epoch)
+            writer.add_scalar('L1L2_Sparsity/'+new_name, l1_loss / l2_loss, i + epoch * step_per_epoch)
+            # print(l1_loss)
+            if not torch.isinf(l1_loss):
+                l1_list.append(l1_loss.cpu().detach().numpy())
 
             # collect l2 list
-            # l2_list.append(l2_loss.cpu().detach().numpy())
+            l2_list.append(l2_loss.cpu().detach().numpy())
             
             # calc sparsity
-            # if 'conv1/weight' not in new_name:
-            #     continue;
-            # print(name)
-            # print(param)
             _sparse_rate = calc_sparsity(param)
-            writer.add_scalar('SparseRate/'+new_name, _sparse_rate, i + epoch * step_per_epoch)
+            writer.add_scalar('Threshed_Sparsity/'+new_name, _sparse_rate, i + epoch * step_per_epoch)
 
         # assert(0)
         # logging global statistics
-        # writer.add_scalar('TotalStatistics/L2_Norm', np.linalg.norm(np.array(l2_list)), i)
-        writer.add_scalar('TotalStatistics/SparseRate', _average_sparsity.get_val()[0], i + epoch * step_per_epoch)
+        mean_l2 = np.linalg.norm(np.array(l2_list))
+        mean_l1 = np.sum(np.array(l1_list, dtype=np.float32))
+        # print(mean_l1)
+        sparsity_metric_l1l2 = mean_l1 / mean_l2
+        # print(sparsity_metric_l1l2)
+        writer.add_scalar('TotalStatistics/L2_Norm', mean_l2, i + epoch * step_per_epoch)
+        writer.add_scalar('TotalStatistics/L1_Norm', mean_l1, i + epoch * step_per_epoch)
+        writer.add_scalar('TotalStatistics/L1L2_Sparsity', sparsity_metric_l1l2, i + epoch * step_per_epoch)
+        writer.add_scalar('TotalStatistics/Threshed_Sparsity' + str(_THRESHOLD), _average_sparsity.get_val()[0], i + epoch * step_per_epoch)
 
         loss = step(input, target, optimizer_step=optimizer_step)
         it_time = time.time() - end

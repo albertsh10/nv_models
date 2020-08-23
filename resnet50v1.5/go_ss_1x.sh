@@ -7,8 +7,8 @@ _BS=128 # 803 ips
 _BASELR=`jq -n $_BS*0.001`
 _DATAPATH="/data/imagenet_pytorch/torch"
 
-# _DEBUG=true
-_DEBUG=false
+_DEBUG=true
+# _DEBUG=false
 
 if [ $_DEBUG == true ];
 then

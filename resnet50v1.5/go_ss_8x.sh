@@ -8,8 +8,8 @@ _OBS=`jq -n $_BS*8`
 _BASELR=`jq -n $_OBS*0.001`
 _DATAPATH="/data/imagenet_pytorch/torch"
 
-_DEBUG=true
-# _DEBUG=false
+# _DEBUG=true
+_DEBUG=false
 
 if [ $_DEBUG == true ];
 then
