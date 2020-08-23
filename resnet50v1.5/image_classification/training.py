@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019, NVIDIA CORPORATION
+#Copyright (c) 2018-2019, NVIDIA CORPORATION
 # Copyright (c) 2017-      Facebook, Inc
 #
 # All rights reserved.
@@ -311,10 +311,6 @@ def train(train_loader,
     model_and_loss.train()
     end = time.time()
 
-    params = model_and_loss.model.named_parameters()
-    # for name, param in params:
-    #     print(name, param)
-    #     assert(0)
 
     optimizer.zero_grad()
 
@@ -323,6 +319,8 @@ def train(train_loader,
         data_iter = logger.iteration_generator_wrapper(data_iter)
     if prof > 0:
         data_iter = utils.first_n(prof, data_iter)
+    step_per_epoch = 1250 * 1024 / 256
+    print('step per epoch = ', step_per_epoch)
 
     for i, (input, target) in data_iter:
         bs = input.size(0)
@@ -330,10 +328,66 @@ def train(train_loader,
         data_time = time.time() - end
 
         optimizer_step = ((i + 1) % (batch_size_multiplier)) == 0
+        # TODO(albert) move to new place ,log first start
+        # loss = step(input, target, optimizer_step=optimizer_step)
+
+        # TODO(albert) move time counter backwards for accurate calc of ips
+        # it_time = time.time() - end
+
+        # if logger is not None:
+        #     logger.log_metric('train.loss', to_python_float(loss), bs)
+        #     logger.log_metric('train.compute_ips',
+        #                       calc_ips(bs, it_time - data_time))
+        #     logger.log_metric('train.total_ips', calc_ips(bs, it_time))
+        #     logger.log_metric('train.data_time', data_time)
+        #     logger.log_metric('train.compute_time', it_time - data_time)
+        #     writer.add_scalar('Loss/train', loss, i)
+
+        # TODO(albert) adding logging for l2
+        _THRESHOLD = 1e-5
+        _average_sparsity = log.AverageMeter()
+        params = model_and_loss.model.named_parameters()
+        def calc_sparsity(tens):
+            # _nonzeros = torch.zeros(tens.shape)
+            # _nonzeros[tens > _THRESHOLD] = 1.0
+            # _nonzeros = _nonzeros.numpy()
+            
+            _nonzeros = (torch.nn.functional.relu(torch.abs(tens) - _THRESHOLD)).cpu().detach().numpy()
+            # _nonzeros = (torch.nn.functional.relu(torch.abs(tens) - _THRESHOLD)).cpu().detach().numpy()
+            _numnonzero = np.count_nonzero(_nonzeros)
+            _numel = _nonzeros.size
+            _tensor_sparsity = (_numel - _numnonzero) / _numel
+            #print(_nonzeros)
+            #print(_numnonzero)
+            #print(_numel)
+            #print(_tensor_sparsity)
+            _average_sparsity.record(_tensor_sparsity, _numel)
+            return _tensor_sparsity
+
+        l2_list = []
+        for name, param in params:
+            new_name = name[2:].replace('.', '/')
+            # l2_loss = torch.norm(param)
+            # writer.add_scalar('L2/'+new_name, l2_loss, i)
+
+            # collect l2 list
+            # l2_list.append(l2_loss.cpu().detach().numpy())
+            
+            # calc sparsity
+            # if 'conv1/weight' not in new_name:
+            #     continue;
+            # print(name)
+            # print(param)
+            _sparse_rate = calc_sparsity(param)
+            writer.add_scalar('SparseRate/'+new_name, _sparse_rate, i + epoch * step_per_epoch)
+
+        # assert(0)
+        # logging global statistics
+        # writer.add_scalar('TotalStatistics/L2_Norm', np.linalg.norm(np.array(l2_list)), i)
+        writer.add_scalar('TotalStatistics/SparseRate', _average_sparsity.get_val()[0], i + epoch * step_per_epoch)
+
         loss = step(input, target, optimizer_step=optimizer_step)
-
         it_time = time.time() - end
-
         if logger is not None:
             logger.log_metric('train.loss', to_python_float(loss), bs)
             logger.log_metric('train.compute_ips',
@@ -341,8 +395,7 @@ def train(train_loader,
             logger.log_metric('train.total_ips', calc_ips(bs, it_time))
             logger.log_metric('train.data_time', data_time)
             logger.log_metric('train.compute_time', it_time - data_time)
-            writer.add_scalar('Loss/train', loss, i)
-
+            writer.add_scalar('Loss/train', loss, i + epoch * step_per_epoch)
         end = time.time()
 
 
@@ -462,9 +515,9 @@ def validate(val_loader,
             logger.log_metric('val.compute_latency_at100', it_time - data_time)
 
         end = time.time()
-    writer.add_scalar('top1', top1.get_val(), epoch)
-    writer.add_scalar('top5', top5.get_val(), epoch)
-    writer.add_scalar('Loss/test', losses.get_val(), epoch)
+    writer.add_scalar('top1', top1.get_val()[0], epoch)
+    writer.add_scalar('top5', top5.get_val()[0], epoch)
+    writer.add_scalar('Loss/test', losses.get_val()[0], epoch)
 
     return top1.get_val()
 
