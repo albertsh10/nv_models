@@ -320,7 +320,9 @@ def train(train_loader,
         data_iter = logger.iteration_generator_wrapper(data_iter)
     if prof > 0:
         data_iter = utils.first_n(prof, data_iter)
-    step_per_epoch = 1250 * 1024 / 256
+    # TODO(albert) warning, have to move to args, now use hardcoding
+    # step_per_epoch = 1250 * 1024 / 1024
+    step_per_epoch = 1250
     print('step per epoch = ', step_per_epoch)
 
     for i, (input, target) in data_iter:

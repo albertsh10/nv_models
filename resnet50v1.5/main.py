@@ -337,6 +337,8 @@ def main(args):
             checkpoint = torch.load(
                 args.resume,
                 map_location=lambda storage, loc: storage.cuda(args.gpu))
+            # print(checkpoint)
+            # assert(0)
             start_epoch = checkpoint['epoch']
             best_prec1 = checkpoint['best_prec1']
             model_state = checkpoint['state_dict']
@@ -445,12 +447,24 @@ def main(args):
 
     if args.distributed:
         model_and_loss.distributed()
+    #if args.sparse and args.resume:
+    #    # TODO(albert) add ASP support
+    #    ASP.prune_trained_model(model_and_loss.model, optimizer)
+    #assert(0)
 
+    # print(model_state.keys())
+    # print(model_state)
+    new_model_state = {}
+    for name, state in model_state.popitem():
+        print(name)
+        print(state)
+        new_model_state[name] = state
+        assert(0)
     model_and_loss.load_model_state(model_state)
 
     if args.sparse and args.resume:
         # TODO(albert) add ASP support
-        ASP.prune_trained_model(model_and_loss.model, optimizer)
+        ASP.prune_trained_model(model_and_loss.model,'haha', optimizer)
 
     print(args.save_checkpoints)
 
