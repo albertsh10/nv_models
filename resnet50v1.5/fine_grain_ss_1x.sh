@@ -12,7 +12,7 @@ _DEBUG=true
 
 if [ $_DEBUG == true ];
 then
-        python ./main.py $_DATAPATH --data-backend pytorch --raport-file raport_stage_1.json -j5 -p 100 --lr $_BASELR --optimizer-batch-size $_BS --warmup $_WARMUPS --arch resnet50 -c fanin --label-smoothing 0.1 --lr-schedule cosine --mom 0.875 --wd 3.0517578125e-05 --workspace ${1:-./} -b $_BS --fp16 --static-loss-scale 128 --epochs $_EPOCHS --resume "./model_best.pth.tar"
+        python ./main.py $_DATAPATH --data-backend pytorch --raport-file raport_stage_2.json -j5 -p 100 --lr $_BASELR --optimizer-batch-size $_BS --warmup $_WARMUPS --arch resnet50 -c fanin --label-smoothing 0.1 --lr-schedule cosine --mom 0.875 --wd 3.0517578125e-05 --workspace ${1:-./} -b $_BS --fp16 --static-loss-scale 128 --epochs $_EPOCHS --resume "./model_best.pth.tar"
 else
         nohup python ./main.py $_DATAPATH --data-backend pytorch --raport-file raport_stage_2.json -j5 -p 100 --lr $_BASELR --optimizer-batch-size $_BS --warmup $_WARMUPS --arch resnet50 -c fanin --label-smoothing 0.1 --lr-schedule cosine --mom 0.875 --wd 3.0517578125e-05 --workspace ${1:-./} -b $_BS --fp16 --static-loss-scale 128 --epochs $_EPOCHS  --resume "./model_best.pth.tar" --sparse > tmplog2 2>&1 &
         nohup tensorboard --logdir=runs --port=6006 > tbtmplog2 2>&1 &
