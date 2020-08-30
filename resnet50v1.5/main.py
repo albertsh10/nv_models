@@ -111,6 +111,11 @@ def add_parser_arguments(parser):
                         type=int,
                         metavar='N',
                         help='number of total epochs to run')
+    parser.add_argument('--retrain_init_epoch',
+                        default=0,
+                        type=int,
+                        metavar='N',
+                        help='number of starting epochs to retrain')
     parser.add_argument('-b',
                         '--batch-size',
                         default=256,
@@ -341,7 +346,7 @@ def main(args):
             # assert(0)
             start_epoch = checkpoint['epoch']
             if args.sparse:
-                start_epoch = 0
+                start_epoch = args.retrain_init_epoch
             best_prec1 = checkpoint['best_prec1']
             model_state = checkpoint['state_dict']
             optimizer_state = checkpoint['optimizer']
